@@ -43,7 +43,8 @@ python probe_endpoints.py     # 12 个端点逐个探
 | `probe128.py` / `probe_endpoints.py` | 上游探测矩阵 |
 | `apkcert.py` | 从 APK Signing Block 提证书 |
 | `cert_0.der` | 本 APK 签名证书（`app-token` 的 token 字段来源） |
-| `jadx-out/` | 全量反编译源码 |
+| `sources/` | 关键反编译源码（拦截器 / 接口 / 模型枚举 / 额度常量 / 失败重试） |
+| `jadx-out/` | 全量反编译（18404 个 .java，本地生成，未入库） |
 | `AI-Chat-128.0-逆向报告-R1.md` | 完整报告 |
 
 ## 协议速查
