@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Chat 2API · Demo</title>
+<style>
+  :root { --bg:#0f1115; --card:#171a21; --line:#262b36; --pri:#4c8dff; --txt:#e6e9ef; --mut:#8b93a7; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt);
+         font:14px/1.6 -apple-system,"Segoe UI",system-ui,"Microsoft YaHei",sans-serif; }
+  header { padding:14px 18px; border-bottom:1px solid var(--line); display:flex;
+           align-items:center; gap:12px; flex-wrap:wrap; }
+  h1 { font-size:15px; margin:0; font-weight:600; }
+  .tag { font-size:11px; padding:2px 8px; border-radius:999px; background:#1d2b45; color:#7fb2ff; }
+  .tag.mock { background:#3a2d12; color:#e8b64c; }
+  .tag.up { background:#12321f; color:#57d68a; }
+  main { display:grid; grid-template-columns: 1fr 320px; gap:14px; padding:14px; max-width:1180px; margin:0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  #log { height:56vh; overflow:auto; display:flex; flex-direction:column; gap:10px; }
+  .msg { padding:9px 12px; border-radius:10px; max-width:88%; white-space:pre-wrap; word-break:break-word; }
+  .me { align-self:flex-end; background:#1c3358; }
+  .ai { align-self:flex-start; background:#1e2129; border:1px solid var(--line); }
+  .sys { align-self:center; color:var(--mut); font-size:12px; }
+  .row { display:flex; gap:8px; margin-top:10px; }
+  input[type=text], select, textarea {
+    background:#11141a; color:var(--txt); border:1px solid var(--line);
+    border-radius:9px; padding:9px 11px; font-size:13px; width:100%; }
+  button { background:var(--pri); color:#fff; border:0; border-radius:9px;
+           padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  button.ghost { background:#20252f; color:var(--txt); }
+  label.ck { display:flex; align-items:center; gap:7px; color:var(--mut); font-size:12.5px; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  td { padding:4px 0; color:var(--mut); }
+  td.v { text-align:right; color:var(--txt); font-variant-numeric:tabular-nums; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.08em;
+       color:var(--mut); margin:0 0 10px; font-weight:600; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#57d68a; display:inline-block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AI Chat 2API</h1>
+  <span class="tag" id="modeTag">…</span>
+  <span style="color:var(--mut);font-size:12px" id="upstream">—</span>
+  <span style="margin-left:auto;color:var(--mut);font-size:12px"><span class="dot"></span> <span id="health">ok</span></span>
+</header>
+
+<main>
+  <section class="card">
+    <div id="log">
+      <div class="msg ai">已连接到本地 2API。上游协议已还原（Starnest / starnest.aichat.aichatbot.assistant）。发条消息试试。</div>
+    </div>
+    <div class="row">
+      <input type="text" id="q" placeholder="输入消息，Enter 发送…" />
+      <button id="send">发送</button>
+    </div>
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <select id="model" style="width:190px"></select>
+        <label class="ck"><input type="checkbox" id="stream" checked /> 流式</label>
+      </div>
+      <button class="ghost" id="clear">清空</button>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <h2>运行统计</h2>
+      <table>
+        <tr><td>总请求</td><td class="v" id="s_req">0</td></tr>
+        <tr><td>成功</td><td class="v" id="s_ok">0</td></tr>
+        <tr><td>错误</td><td class="v" id="s_err">0</td></tr>
+        <tr><td>SSE chunk</td><td class="v" id="s_chunk">0</td></tr>
+        <tr><td>p50 延迟</td><td class="v" id="s_p50">-</td></tr>
+        <tr><td>p90 延迟</td><td class="v" id="s_p90">-</td></tr>
+        <tr><td>上游状态</td><td class="v" id="s_status">-</td></tr>
+      </table>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>协议摘要</h2>
+      <table>
+        <tr><td>chat</td><td class="v">/api/v2/completions/v2</td></tr>
+        <tr><td>stream</td><td class="v">/api/v2/completions/v3/stream</td></tr>
+        <tr><td>鉴权</td><td class="v">Signature + app-token</td></tr>
+        <tr><td>设备池</td><td class="v" id="pool">-</td></tr>
+      </table>
+      <p style="color:var(--mut);font-size:11.5px;margin:10px 0 0">
+        Authorization 为 sha256(kid+ts+"90")；app-token 为 HS256 JWT，token 字段 = b64(sha256(APK 证书 DER))。
+      </p>
+    </div>
+  </aside>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const log = $('log');
+
+function bubble(text, cls) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.textContent = text;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+  return d;
+}
+
+async function boot() {
+  try {
+    const h = await (await fetch('/health')).json();
+    $('modeTag').textContent = 'mode: ' + h.mode;
+    $('modeTag').className = 'tag ' + (h.mode === 'upstream' ? 'up' : 'mock');
+    $('upstream').textContent = h.upstream;
+    const p = await (await fetch('/protocol')).json();
+    $('pool').textContent = '8 devices';
+  } catch (e) { $('health').textContent = 'offline'; }
+  try {
+    const m = await (await fetch('/v1/models')).json();
+    $('model').innerHTML = m.data.map(x => `<option>${x.id}</option>`).join('');
+  } catch (e) {}
+  setInterval(refreshStats, 2000);
+}
+
+async function refreshStats() {
+  try {
+    const s = await (await fetch('/stats')).json();
+    $('s_req').textContent = s.requests;
+    $('s_ok').textContent = s.ok;
+    $('s_err').textContent = s.errors;
+    $('s_chunk').textContent = s.sse_chunks;
+    $('s_p50').textContent = s.latency_ms.p50 + ' ms';
+    $('s_p90').textContent = s.latency_ms.p90 + ' ms';
+    $('s_status').textContent = Object.entries(s.by_status).map(([k, v]) => `${k}×${v}`).join(' ') || '-';
+  } catch (e) {}
+}
+
+async function send() {
+  const q = $('q').value.trim();
+  if (!q) return;
+  $('q').value = '';
+  bubble(q, 'me');
+  const stream = $('stream').checked;
+  const body = { model: $('model').value || 'gpt-4o-mini', stream,
+                 messages: [{ role: 'user', content: q }] };
+  const btn = $('send'); btn.disabled = true;
+  const t0 = performance.now();
+  try {
+    const r = await fetch('/v1/chat/completions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body) });
+    if (!stream) {
+      const j = await r.json();
+      if (j.error) { bubble('错误: ' + j.error.message, 'sys'); }
+      else { bubble(j.choices[0].message.content, 'ai'); }
+    } else {
+      const node = bubble('', 'ai');
+      const rd = r.body.getReader(); const dec = new TextDecoder();
+      let buf = '', out = '';
+      while (true) {
+        const { done, value } = await rd.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const parts = buf.split('\n\n'); buf = parts.pop();
+        for (const part of parts) {
+          const line = part.replace(/^data:\s*/, '').trim();
+          if (!line || line === '[DONE]') continue;
+          try {
+            const j = JSON.parse(line);
+            const d = j.choices?.[0]?.delta?.content;
+            if (d) { out += d; node.textContent = out; log.scrollTop = log.scrollHeight; }
+          } catch (e) {}
+        }
+      }
+      if (!out) node.textContent = '(空响应)';
+    }
+    bubble(`耗时 ${Math.round(performance.now() - t0)} ms`, 'sys');
+  } catch (e) {
+    bubble('请求失败: ' + e, 'sys');
+  } finally { btn.disabled = false; refreshStats(); }
+}
+
+$('send').onclick = send;
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+$('clear').onclick = () => { log.innerHTML = ''; };
+boot();
+
+// 冒烟: ?auto=<文本> 页面加载后自动发一条, 用于真实浏览器链路验证
+const auto = new URLSearchParams(location.search).get('auto');
+if (auto) setTimeout(() => { $('q').value = auto; send(); }, 800);
+</script>
+</body>
+</html>

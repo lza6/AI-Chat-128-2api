@@ -1,0 +1,49 @@
+{
+  "target": "http://127.0.0.1:8933",
+  "steps": [
+    {
+      "step": "goto",
+      "title": "AI Chat 2API · Demo"
+    },
+    {
+      "step": "messages",
+      "count": 4,
+      "items": [
+        {
+          "cls": "msg ai",
+          "text": "已连接到本地 2API。上游协议已还原（Starnest / starnest.aichat.aichatbot.assistant）。发条消息试试。"
+        },
+        {
+          "cls": "msg me",
+          "text": "你好，请用一句话自我介绍"
+        },
+        {
+          "cls": "msg ai",
+          "text": "[MOCK 128.0] upstream protocol ready. got 1 message(s), model=gpt-3.5-turbo. last_user='你好，请用一句话自我介绍' "
+        },
+        {
+          "cls": "msg sys",
+          "text": "耗时 149 ms"
+        }
+      ]
+    },
+    {
+      "step": "panel",
+      "health": "ok",
+      "mode": "mode: mock",
+      "stats": {
+        "req": "1",
+        "ok": "1",
+        "err": "0",
+        "chunk": "12",
+        "p50": "146 ms"
+      },
+      "pool": "8 devices"
+    },
+    {
+      "step": "manual-click",
+      "messages": 7
+    }
+  ],
+  "ok": true
+}

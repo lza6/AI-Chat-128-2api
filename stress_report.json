@@ -1,0 +1,91 @@
+{
+  "target": "http://127.0.0.1:8933",
+  "total_scenarios": 11,
+  "passed": 11,
+  "failed": 0,
+  "concurrency": 20,
+  "rounds": 10,
+  "stream_load": false,
+  "results": [
+    {
+      "scenario": "GET /health",
+      "ok": true,
+      "detail": "200",
+      "ms": 51.5
+    },
+    {
+      "scenario": "GET /stats",
+      "ok": true,
+      "detail": "200",
+      "ms": 1.4
+    },
+    {
+      "scenario": "GET /protocol",
+      "ok": true,
+      "detail": "200",
+      "ms": 1.2
+    },
+    {
+      "scenario": "GET /v1/models",
+      "ok": true,
+      "detail": "200",
+      "ms": 1.3
+    },
+    {
+      "scenario": "POST chat (non-stream)",
+      "ok": true,
+      "detail": "[MOCK 128.0] upstream protocol ready. got 1 message(s), model=gpt-4o-mini. last_user='ping",
+      "ms": 49.3
+    },
+    {
+      "scenario": "POST chat (stream)",
+      "ok": true,
+      "detail": "200 chunks=11 text=[MOCK 128.0] upstream protocol ready. got 1 message(s), mode",
+      "ms": 0
+    },
+    {
+      "scenario": "边界: 空 messages -> 400",
+      "ok": true,
+      "detail": "400",
+      "ms": 1.1
+    },
+    {
+      "scenario": "边界: 缺 messages -> 400",
+      "ok": true,
+      "detail": "400",
+      "ms": 1.0
+    },
+    {
+      "scenario": "边界: 未知路径 -> 404",
+      "ok": true,
+      "detail": "404",
+      "ms": 0.8
+    },
+    {
+      "scenario": "边界: 坏 JSON -> 400",
+      "ok": true,
+      "detail": "400",
+      "ms": 0
+    },
+    {
+      "scenario": "并发 20x10",
+      "ok": true,
+      "detail": "200/200 ok, 0 err, wall=0.69s, p50=43ms, rps=289.1",
+      "ms": 691.8
+    }
+  ],
+  "server_stats": {
+    "requests": 286,
+    "ok": 286,
+    "errors": 0,
+    "sse_chunks": 50,
+    "by_status": {},
+    "latency_ms": {
+      "p50": 41.9,
+      "p90": 56.9,
+      "p99": 146.0,
+      "n": 286
+    }
+  },
+  "timestamp": "2026-10-29T04:16:47"
+}

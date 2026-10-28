@@ -1,0 +1,8 @@
+# 原始 APK 与全量反编译产物不入库（体积）
+app128.apk
+jadx-out/
+jadx.log
+__pycache__/
+*.pyc
+*.log
+raw/
